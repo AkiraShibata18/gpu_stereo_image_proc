@@ -23,7 +23,11 @@ include_directories(include)
 
 find_package(OpenCV REQUIRED) 
 include_directories(${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
-find_package(VisionWorks REQUIRED)
+find_package(VisionWorks QUIET)
+if (NOT VisionWorks_FOUND)
+  message(WARNING "VisionWorks is not found. Skipping to build the package")
+  return()
+endif()
 include_directories(${VisionWorks_INCLUDE_DIRS})
 
 find_package(CUDA REQUIRED)
