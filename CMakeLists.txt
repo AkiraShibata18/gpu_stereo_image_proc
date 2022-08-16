@@ -45,6 +45,7 @@ include(ExternalProject)
 ExternalProject_Add(
     ext-libSGM
     GIT_REPOSITORY "https://github.com/fixstars/libSGM.git"
+    GIT_TAG     2.7.0
     PREFIX      "${CMAKE_CURRENT_BINARY_DIR}/ext/libSGM"
     INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/libSGM"
     SOURCE_DIR  "${CMAKE_CURRENT_SOURCE_DIR}/libSGM"
@@ -54,6 +55,7 @@ ExternalProject_Add(
                 "-DAUTO_DETECT_ARCH=${AUTO_DETECT_ARCH}"
                 "-DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/libSGM"
     BUILD_ALWAYS ON
+    PATCH_COMMAND git apply ${CMAKE_CURRENT_SOURCE_DIR}/libSGM.patch
 )
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/libSGM/include)

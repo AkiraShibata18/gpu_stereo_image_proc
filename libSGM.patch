@@ -1,0 +1,73 @@
+diff --git a/src/horizontal_path_aggregation.cu b/src/horizontal_path_aggregation.cu
+index e5742fa..815db3e 100644
+--- a/src/horizontal_path_aggregation.cu
++++ b/src/horizontal_path_aggregation.cu
+@@ -86,7 +86,7 @@ __global__ void aggregate_horizontal_path_kernel(
+ 			for(unsigned int j = 0; j < DP_BLOCK_SIZE; ++j){
+ 				const int x = static_cast<int>(width - (min_disp + j + dp_offset));
+ 				if(0 <= x && x < static_cast<int>(width)){
+-					right_buffer[i][j] = __ldg(&right[i * feature_step + x]);
++					right_buffer[i][j] = ldg(&right[i * feature_step + x]);
+ 				}else{
+ 					right_buffer[i][j] = 0;
+ 				}
+@@ -106,7 +106,7 @@ __global__ void aggregate_horizontal_path_kernel(
+ 				if(y >= height){
+ 					continue;
+ 				}
+-				const feature_type left_value = __ldg(&left[j * feature_step + x]);
++				const feature_type left_value = ldg(&left[j * feature_step + x]);
+ 				if(DIRECTION > 0){
+ 					const feature_type t = right_buffer[j][DP_BLOCK_SIZE - 1];
+ 					for(unsigned int k = DP_BLOCK_SIZE - 1; k > 0; --k){
+@@ -119,7 +119,7 @@ __global__ void aggregate_horizontal_path_kernel(
+ #endif
+ 					if(lane_id == 0 && x >= min_disp){
+ 						right_buffer[j][0] =
+-							__ldg(&right[j * feature_step + x - min_disp]);
++							ldg(&right[j * feature_step + x - min_disp]);
+ 					}
+ 				}else{
+ 					const feature_type t = right_buffer[j][0];
+@@ -135,7 +135,7 @@ __global__ void aggregate_horizontal_path_kernel(
+ 					if(lane_id + 1 == SUBGROUP_SIZE){
+ 						if(x >= min_disp + dp_offset + DP_BLOCK_SIZE - 1){
+ 							right_buffer[j][DP_BLOCK_SIZE - 1] =
+-								__ldg(&right[j * feature_step + x - (min_disp + dp_offset + DP_BLOCK_SIZE - 1)]);
++								ldg(&right[j * feature_step + x - (min_disp + dp_offset + DP_BLOCK_SIZE - 1)]);
+ 						}else{
+ 							right_buffer[j][DP_BLOCK_SIZE - 1] = 0;
+ 						}
+diff --git a/src/oblique_path_aggregation.cu b/src/oblique_path_aggregation.cu
+index 3405093..a4a44e0 100644
+--- a/src/oblique_path_aggregation.cu
++++ b/src/oblique_path_aggregation.cu
+@@ -96,7 +96,7 @@ __global__ void aggregate_oblique_path_kernel(
+ 		__syncthreads();
+ 		// Compute
+ 		if(0 <= x && x < static_cast<int>(width)){
+-			const feature_type left_value = __ldg(&left[x + y * width]);
++			const feature_type left_value = ldg(&left[x + y * width]);
+ 			feature_type right_values[DP_BLOCK_SIZE];
+ 			for(unsigned int j = 0; j < DP_BLOCK_SIZE; ++j){
+ 				right_values[j] = right_buffer[right0_addr_lo + j][right0_addr_hi];
+diff --git a/src/path_aggregation_common.hpp b/src/path_aggregation_common.hpp
+index ddf5590..533be51 100644
+--- a/src/path_aggregation_common.hpp
++++ b/src/path_aggregation_common.hpp
+@@ -99,6 +99,15 @@ __device__ unsigned int generate_mask()
+ 	return static_cast<unsigned int>((1ull << SIZE) - 1u);
+ }
+ 
++template<typename T>
++__device__ __forceinline__ T ldg(const T* ptr) {
++#if __CUDA_ARCH__ >= 350
++    return __ldg(ptr);
++#else
++    return *ptr;
++#endif
++}
++
+ }
+ }
+ 
